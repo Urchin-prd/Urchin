@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api, type Project } from '../api';
-import { fmt, useLoad } from '../hooks';
+import { fmt, useAction, useLoad } from '../hooks';
 
 interface Finding { severity: 'high' | 'medium' | 'low'; file: string; issue: string; why: string }
 interface Review { id: string; sha: string; message: string | null; author: string | null; verdict: 'ok' | 'concerns' | 'error'; findings: string; created_at: number }
@@ -13,11 +13,20 @@ const parseFindings = (raw: string): Finding[] => {
 export default function ReviewList({ project }: { project: Project }) {
   const list = useLoad(() => api<{ reviews: Review[] }>(`/projects/${project.id}/reviews`), [project.id], 30000);
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const again = useAction();
+  const [busySha, setBusySha] = useState<string | null>(null);
+  async function rerun(sha: string) {
+    setBusySha(sha);
+    await again.run(() => api(`/projects/${project.id}/reviews/${sha}/retry`, { method: 'POST' }));
+    setBusySha(null);
+    list.reload();
+  }
   const reviews = list.data?.reviews ?? [];
   if (!reviews.length) return null;
 
   return (
     <div className="reviews">
+      {again.error && <p className="error small">{again.error}</p>}
       <h3 className="reviews-title">Push reviews</h3>
       {reviews.slice(0, 8).map((r) => {
         const findings = parseFindings(r.findings);
@@ -36,6 +45,9 @@ export default function ReviewList({ project }: { project: Project }) {
                 ? <a href={`https://github.com/${project.github_repo}/commit/${r.sha}`} target="_blank" rel="noreferrer">{r.sha.slice(0, 7)} ↗</a>
                 : r.sha.slice(0, 7)}
               {r.author ? ` · ${r.author}` : ''} · {fmt(r.created_at)}
+              {r.verdict === 'error' && (
+                <> · <button className="link-btn" disabled={busySha === r.sha} onClick={() => rerun(r.sha)}>{busySha === r.sha ? 'Reviewing…' : 'Review again'}</button></>
+              )}
             </div>
             {isOpen && findings.length > 0 && (
               <div className="inc-body">
