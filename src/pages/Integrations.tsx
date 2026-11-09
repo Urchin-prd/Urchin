@@ -11,8 +11,8 @@ import { PageSkeleton, Skeleton } from '../components/Skeleton';
 const BOT = import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string | undefined;
 const PROVIDERS = [
   { id: 'anthropic', label: 'Claude' },
-  { id: 'gemini', label: 'Gemini' },
   { id: 'groq', label: 'Groq' },
+  { id: 'serv', label: 'SERV Reasoning' },
 ] as const;
 
 function useOrgSettings(pollMs?: number) {
@@ -25,16 +25,16 @@ function useOrgSettings(pollMs?: number) {
 
 // ---------------- AI provider ----------------
 
-const KEY_NAME = { anthropic: 'ANTHROPIC_API_KEY', gemini: 'GEMINI_API_KEY', groq: 'GROQ_API_KEY' } as const;
+const KEY_NAME = { anthropic: 'ANTHROPIC_API_KEY', groq: 'GROQ_API_KEY', serv: 'OPENSERV_API_KEY' } as const;
 const KEY_LINK = {
   anthropic: { label: 'Get a Claude key', href: 'https://console.anthropic.com/settings/keys' },
-  gemini: { label: 'Get a free Gemini key', href: 'https://aistudio.google.com/apikey' },
   groq: { label: 'Get a free Groq key', href: 'https://console.groq.com/keys' },
+  serv: { label: 'Get an OpenServ key', href: 'https://console.openserv.ai' },
 } as const;
-const DEFAULT_MODEL = { anthropic: 'claude-sonnet-5-5', gemini: 'gemini-3.8-flash', groq: 'chosen automatically' } as const;
+const DEFAULT_MODEL = { anthropic: 'claude-sonnet-5-5', groq: 'chosen automatically', serv: 'gpt-5.4-mini' } as const;
 /** Shown as an example when a typed model name looks wrong. */
-const MODEL_EXAMPLE = { anthropic: 'claude-sonnet-5-5', gemini: 'gemini-3.8-flash', groq: 'llama-3.3-70b-versatile' } as const;
-const MODEL_PATTERN = { anthropic: /^claude-[\w.-]+$/i, gemini: /^gemini-[\w.-]+$/i, groq: /^[\w./:-]+$/ } as const;
+const MODEL_EXAMPLE = { anthropic: 'claude-sonnet-5-5', groq: 'llama-3.3-70b-versatile', serv: 'gpt-5.4-mini' } as const;
+const MODEL_PATTERN = { anthropic: /^claude-[\w.-]+$/i, groq: /^[\w./:-]+$/, serv: /^[\w./:-]+$/ } as const;
 
 export function AiProviderPage() {
   const { orgId, isOwner, settings, s, loading, error } = useOrgSettings();
@@ -83,7 +83,9 @@ export function AiProviderPage() {
             </div>
             <div className="var-row" role="row">
               <code className="var-name">{KEY_NAME[s!.ai_provider!]}</code>
-              <span className="var-mask" aria-label="Hidden value">••••••••••••••••</span>
+              {s!.ai_provider === 'serv' && s!.serv_available
+                ? <span className="small">Included with Urchin</span>
+                : <span className="var-mask" aria-label="Hidden value">••••••••••••••••</span>}
               <span className="small">{s!.ai_model ?? DEFAULT_MODEL[s!.ai_provider!]}</span>
               <span className="muted small">{fmt(s!.updated_at)}</span>
               {isOwner ? (
@@ -95,7 +97,7 @@ export function AiProviderPage() {
             </div>
           </div>
         ) : (
-          <p className="var-empty muted">No key yet. Add a Claude or Gemini key to turn on diagnoses.</p>
+          <p className="var-empty muted">No key yet. Pick SERV Reasoning, or add a Claude or Groq key, to turn on diagnoses.</p>
         )}
         {rm.error && <p className="error small">{rm.error}</p>}
         {!isOwner && <p className="muted small">Only owners can change this.</p>}
@@ -117,7 +119,7 @@ export function ProviderModal({ orgId, current, onClose, onSaved }: {
   orgId: string; current?: AgentSettings; onClose: () => void; onSaved: () => void;
 }) {
   const editing = !!current?.has_api_key && !!current.ai_provider;
-  const [provider, setProvider] = useState<ProviderId>(current?.ai_provider ?? 'gemini');
+  const [provider, setProvider] = useState<ProviderId>(current?.ai_provider ?? 'serv');
   const [model, setModel] = useState(current?.ai_provider === provider ? (current?.ai_model ?? '') : '');
   const [key, setKey] = useState('');
   const [show, setShow] = useState(false);
@@ -126,7 +128,9 @@ export function ProviderModal({ orgId, current, onClose, onSaved }: {
   // Switching providers needs a fresh key (the stored one belongs to the other provider).
   const keepsKey = editing && current?.ai_provider === provider;
   const modelBad = model.trim() !== '' && !MODEL_PATTERN[provider].test(model.trim());
-  const keyMissing = !keepsKey && key.trim().length < 8;
+  // SERV Reasoning is provided by Urchin itself when the platform key is set, so no key is asked for.
+  const included = provider === 'serv' && !!current?.serv_available;
+  const keyMissing = !included && !keepsKey && key.trim().length < 8;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -155,6 +159,11 @@ export function ProviderModal({ orgId, current, onClose, onSaved }: {
           ))}
         </div>
 
+        {included ? (
+          <p className="muted small" style={{ margin: 0 }}>
+            <b style={{ color: 'var(--text)' }}>Included with Urchin.</b> SERV Reasoning is ready to use. No key to paste.
+          </p>
+        ) : (
         <label>API key
           <span className="input-wrap">
             <input
@@ -166,6 +175,7 @@ export function ProviderModal({ orgId, current, onClose, onSaved }: {
           </span>
           <a className="small" href={KEY_LINK[provider].href} target="_blank" rel="noreferrer">{KEY_LINK[provider].label} ↗</a>
         </label>
+        )}
 
         <label>Model (optional)
           <input value={model} onChange={(e) => setModel(e.target.value)} autoComplete="off" spellCheck={false} aria-invalid={modelBad}

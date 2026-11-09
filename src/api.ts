@@ -30,7 +30,7 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
 // ---- types mirrored from the backend ----
 
 export interface Org { id: string; name: string; owner_id: string; created_at: number; role: 'owner' | 'member' }
-export type ProviderId = 'anthropic' | 'gemini' | 'groq';
+export type ProviderId = 'anthropic' | 'groq' | 'serv';
 export type FixMode = 'ask' | 'auto';
 export interface Project {
   id: string; org_id: string; name: string; github_repo: string | null; project_key: string;
@@ -65,6 +65,8 @@ export interface Automation {
 }
 export interface AgentSettings {
   ai_provider: ProviderId | null; ai_model: string | null; has_api_key: boolean;
+  /** The platform offers SERV Reasoning with no key from the organization. */
+  serv_available: boolean;
   telegram_chat_id: string | null; updated_at: number | null;
 }
 export interface GithubStatus {

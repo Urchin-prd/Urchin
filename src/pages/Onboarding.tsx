@@ -26,7 +26,7 @@ const QUESTION: Record<StepId, string> = {
 };
 
 const BOT = import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string | undefined;
-const PROVIDER_LABEL = { anthropic: 'Claude', gemini: 'Gemini', groq: 'Groq' } as const;
+const PROVIDER_LABEL = { anthropic: 'Claude', groq: 'Groq', serv: 'SERV Reasoning' } as const;
 
 const skipKey = (orgId: string) => `urchin.onboard.skipped.${orgId}`;
 function loadSkipped(orgId: string): StepId[] {
@@ -304,7 +304,7 @@ function BrainStep({ orgId, isOwner, onDone, onSkip }: { orgId: string; isOwner:
     <form className="stack" onSubmit={submit}>
       <p className="muted">I use your own API key, so your data stays on your account. It’s encrypted and never shown again.</p>
       <div className="seg" role="radiogroup" aria-label="AI provider">
-        {(['anthropic', 'gemini', 'groq'] as const).map((p) => (
+        {(['anthropic', 'groq'] as const).map((p) => (
           <button type="button" key={p} role="radio" aria-checked={provider === p} className={provider === p ? 'on' : ''} onClick={() => setProvider(p)}>
             {PROVIDER_LABEL[p]}
           </button>

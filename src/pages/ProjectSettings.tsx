@@ -5,7 +5,7 @@ import { ProviderModal } from './Integrations';
 import { RailwayLink } from '../components/Railway';
 import Modal from '../components/Modal';
 
-const PROVIDER_NAME = { anthropic: 'Claude', gemini: 'Gemini', groq: 'Groq' } as const;
+const PROVIDER_NAME = { anthropic: 'Claude', groq: 'Groq', serv: 'SERV Reasoning' } as const;
 
 /**
  * Project settings: the AI key and the fix mode sit at the top as cards; the service's own settings and key follow.
