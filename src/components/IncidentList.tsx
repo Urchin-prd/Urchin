@@ -114,7 +114,7 @@ function IncidentDetail({ projectId, incident: i, busy, done, onResolve, onReope
           <h3>Change</h3>
           <p>
             {patch?.file && <code>{patch.file}</code>} {i.fix_summary}
-            {i.fix_forced_ask === 1 && <span className="muted small"> · larger than the safe limit, so approval was required</span>}
+            {i.fix_forced_ask === 1 && <span className="muted small"> · {i.summary.startsWith('Possible bug in') ? 'found by reading the code, so your approval was required' : i.kind === 'capacity' ? 'a performance change, so your approval was required' : 'larger than the safe limit, so your approval was required'}</span>}
           </p>
           <p className="small">
             {i.pr_url && <a href={i.pr_url} target="_blank" rel="noreferrer">Pull request #{i.pr_number} ↗</a>}
