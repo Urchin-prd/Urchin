@@ -67,6 +67,8 @@ export interface AgentSettings {
   ai_provider: ProviderId | null; ai_model: string | null; has_api_key: boolean;
   /** The platform offers SERV Reasoning with no key from the organization. */
   serv_available: boolean;
+  /** Providers that already have a key saved, so switching back needs no key. */
+  saved_providers: ProviderId[];
   telegram_chat_id: string | null; updated_at: number | null;
 }
 export interface GithubStatus {

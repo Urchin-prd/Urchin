@@ -125,8 +125,8 @@ export function ProviderModal({ orgId, current, onClose, onSaved }: {
   const [show, setShow] = useState(false);
   const save = useAction();
 
-  // Switching providers needs a fresh key (the stored one belongs to the other provider).
-  const keepsKey = editing && current?.ai_provider === provider;
+  // A provider that already has a key saved can be switched back to without typing it again.
+  const keepsKey = !!current?.saved_providers?.includes(provider);
   const modelBad = model.trim() !== '' && !MODEL_PATTERN[provider].test(model.trim());
   // SERV Reasoning is provided by Urchin itself when the platform key is set, so no key is asked for.
   const included = provider === 'serv' && !!current?.serv_available;
@@ -169,7 +169,7 @@ export function ProviderModal({ orgId, current, onClose, onSaved }: {
             <input
               type={show ? 'text' : 'password'} value={key} onChange={(e) => setKey(e.target.value)}
               autoComplete="off" spellCheck={false}
-              placeholder={keepsKey ? '•••••••••••••••• (saved. Leave blank to keep it)' : 'Paste your API key'}
+              placeholder={keepsKey ? '•••••••••••••••• (saved. Leave blank to use it)' : 'Paste your API key'}
             />
             <button type="button" className="input-toggle" onClick={() => setShow((v) => !v)} aria-label={show ? 'Hide key' : 'Show key'}>{show ? 'Hide' : 'Show'}</button>
           </span>
