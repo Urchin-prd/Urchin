@@ -27,6 +27,7 @@ export default function IncidentsWorkspace({ project }: { project: Project }) {
   const [mapW, setMapW] = useState(readWidth);
   const [mapHidden, setMapHidden] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [tab, setTab] = useState<'incidents' | 'reviews'>('incidents');
   const ref = useRef<HTMLDivElement>(null);
 
   const clamp = useCallback((v: number) => {
@@ -73,12 +74,14 @@ export default function IncidentsWorkspace({ project }: { project: Project }) {
     >
       <section className="ws-list" aria-label="Incidents">
         <div className="ws-head">
-          <b>Incidents</b>
+          <div className="seg" role="tablist" aria-label="Incidents and push reviews">
+            <button type="button" role="tab" aria-selected={tab === 'incidents'} className={tab === 'incidents' ? 'on' : ''} onClick={() => setTab('incidents')}>Incidents</button>
+            <button type="button" role="tab" aria-selected={tab === 'reviews'} className={tab === 'reviews' ? 'on' : ''} onClick={() => setTab('reviews')}>Push reviews</button>
+          </div>
           {mapHidden && <button className="btn small-btn" onClick={() => setMapHidden(false)}>Show map</button>}
         </div>
         <div className="ws-scroll">
-          <IncidentList projectId={project.id} />
-          <ReviewList project={project} />
+          {tab === 'incidents' ? <IncidentList projectId={project.id} /> : <ReviewList project={project} asTab />}
         </div>
       </section>
 

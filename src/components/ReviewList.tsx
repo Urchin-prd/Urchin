@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api, type Project } from '../api';
 import { fmt, useAction, useLoad } from '../hooks';
+import { ListSkeleton } from './Skeleton';
 
 interface Finding { severity: 'high' | 'medium' | 'low'; file: string; issue: string; why: string }
 interface Review { id: string; sha: string; message: string | null; author: string | null; verdict: 'ok' | 'concerns' | 'error'; findings: string; created_at: number }
@@ -10,7 +11,7 @@ const parseFindings = (raw: string): Finding[] => {
 };
 
 /** Recent pushes Urchin has read for bugs. A push can deploy fine and still hide a bug that nothing has triggered yet. */
-export default function ReviewList({ project }: { project: Project }) {
+export default function ReviewList({ project, asTab = false }: { project: Project; asTab?: boolean }) {
   const list = useLoad(() => api<{ reviews: Review[] }>(`/projects/${project.id}/reviews`), [project.id], 30000);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const again = useAction();
@@ -22,12 +23,15 @@ export default function ReviewList({ project }: { project: Project }) {
     list.reload();
   }
   const reviews = list.data?.reviews ?? [];
-  if (!reviews.length) return null;
+  if (list.loading && asTab) return <ListSkeleton rows={3} />;
+  if (!reviews.length) {
+    return asTab ? <p className="muted small" style={{ margin: 0, padding: '12px 14px' }}>No pushes reviewed yet. Urchin reads each push to your main branch and flags risky changes.</p> : null;
+  }
 
   return (
     <div className="reviews">
       {again.error && <p className="error small">{again.error}</p>}
-      <h3 className="reviews-title">Push reviews</h3>
+      {!asTab && <h3 className="reviews-title">Push reviews</h3>}
       {reviews.slice(0, 8).map((r) => {
         const findings = parseFindings(r.findings);
         const isOpen = open[r.id] ?? false;
