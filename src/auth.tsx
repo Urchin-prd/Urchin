@@ -3,6 +3,7 @@ import {
   GithubAuthProvider, getAdditionalUserInfo, onAuthStateChanged, signInWithPopup, signOut as fbSignOut,
   type User,
 } from 'firebase/auth';
+import { clearLoadCache } from './hooks';
 import { auth } from './firebase';
 import { api } from './api';
 
@@ -37,6 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Ctx.Provider value={{ user, loading, signIn, signOut: () => fbSignOut(auth) }}>{children}</Ctx.Provider>
+    <Ctx.Provider value={{ user, loading, signIn, signOut: () => { clearLoadCache(); return fbSignOut(auth); } }}>{children}</Ctx.Provider>
   );
 }

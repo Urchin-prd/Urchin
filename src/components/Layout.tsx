@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import Feedback from './Feedback';
 import { useTheme } from '../theme';
 import { Link, NavLink, useLocation, useMatch } from 'react-router-dom';
 import { useAuth } from '../auth';
@@ -22,6 +23,9 @@ const icon = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke
 const SidebarIcon = () => (<svg {...icon}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>);
 const SparkIcon = () => (<svg {...icon}><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z" /><path d="M19 16l.7 1.8 1.8.7-1.8.7L19 21l-.7-1.8-1.8-.7 1.8-.7L19 16z" /></svg>);
 const GearIcon = () => (<svg {...icon}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>);
+const ShieldIcon = () => (<svg {...icon}><path d="M12 3l8 3v6c0 4.5-3.2 8.2-8 9-4.8-.8-8-4.5-8-9V6l8-3z" /></svg>);
+const BackIcon = () => (<svg {...icon}><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>);
+const InboxIcon = () => (<svg {...icon}><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z" /></svg>);
 const PlugIcon = () => (<svg {...icon}><path d="M9 2v6M15 2v6" /><path d="M6 8h12v4a6 6 0 0 1-12 0V8z" /><path d="M12 18v4" /></svg>);
 const DashedIcon =() => (<svg {...icon}><circle cx="12" cy="12" r="8" strokeDasharray="3.2 3.2" /></svg>);
 const GridIcon =() => (<svg {...icon}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>);
@@ -95,6 +99,8 @@ function Header({ onToggle, expanded }: { onToggle: () => void; expanded: boolea
         <Link to="/" className="brand" aria-label="Urchin home"><Logo size={22} /></Link>
       </div>
 
+      <div className="header-right">
+      <Feedback />
       <div className="menu" ref={ref}>
         <button className="avatar-btn" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} aria-label="Account menu">
           {user?.photoURL ? <img src={user.photoURL} alt="" referrerPolicy="no-referrer" /> : <span>{label[0]?.toUpperCase()}</span>}
@@ -119,6 +125,7 @@ function Header({ onToggle, expanded }: { onToggle: () => void; expanded: boolea
           </div>
         )}
       </div>
+      </div>
     </header>
   );
 }
@@ -131,11 +138,14 @@ function Sidebar() {
   // Prefix match so /projects/:id and /projects/:id/:section both count as "on this project".
   const projectMatch = useMatch({ path: '/projects/:projectId', end: false });
 
-  const orgs = useLoad(() => api<{ organizations: Org[] }>('/orgs'), [loc.pathname]);
+  const orgs = useLoad(() => api<{ organizations: Org[] }>('/orgs'), [loc.pathname], undefined, 'orgs');
+  const me = useLoad(() => api<{ is_admin?: boolean }>('/me'), [loc.pathname], undefined, 'me');
   // On a project page, look up its org so the sidebar can expand the right one.
   const project = useLoad(
-    async () => (projectMatch?.params.projectId ? api<{ project: Project }>(`/projects/${projectMatch.params.projectId}`) : null),
+    async () => (projectMatch?.params.projectId ? api<{ project: Project }>(`/projects/${projectMatch.params.projectId}`) : undefined),
     [projectMatch?.params.projectId],
+    undefined,
+    projectMatch?.params.projectId ? `project:${projectMatch.params.projectId}` : false,
   );
   const setupMatch = useMatch('/orgs/:orgId/setup');
   const aiMatch = useMatch('/orgs/:orgId/ai');
@@ -152,16 +162,22 @@ function Sidebar() {
   const projects = useLoad(
     async () => (activeOrgId ? api<{ projects: Project[] }>(`/orgs/${activeOrgId}/projects`) : { projects: [] }),
     [activeOrgId, loc.pathname, loc.search],
+    undefined,
+    activeOrgId ? `projects:${activeOrgId}` : false,
   );
 
   // Setup tracks still to do for the active org. Skipped or optional items live here until finished.
   const github = useLoad(
-    async () => (activeOrgId ? api<GithubStatus>(`/orgs/${activeOrgId}/github`) : null),
+    async () => (activeOrgId ? api<GithubStatus>(`/orgs/${activeOrgId}/github`) : undefined),
     [activeOrgId, loc.pathname, loc.search],
+    undefined,
+    activeOrgId ? `github:${activeOrgId}` : false,
   );
   const agent = useLoad(
-    async () => (activeOrgId ? api<{ agent_settings: AgentSettings }>(`/orgs/${activeOrgId}/agent-settings`) : null),
+    async () => (activeOrgId ? api<{ agent_settings: AgentSettings }>(`/orgs/${activeOrgId}/agent-settings`) : undefined),
     [activeOrgId, loc.pathname, loc.search],
+    undefined,
+    activeOrgId ? `agent:${activeOrgId}` : false,
   );
   // Which dropdowns the user has opened or closed by hand (remembered). Anything not overridden is open
   // while it contains the current page, and closed otherwise.
@@ -186,6 +202,9 @@ function Sidebar() {
     });
   }, [activeOrgId, activeProjectId]);
 
+  // AI provider and Settings are app-level items; they apply to the organization you are in, else your first one.
+  const mainOrgId = activeOrgId ?? orgs.data?.organizations[0]?.id;
+
   const tracksReady = !!activeOrgId && !!github.data && !!agent.data && !!projects.data;
   const trackDone: Record<TrackId, boolean> = {
     code: !!github.data?.connected,
@@ -195,6 +214,25 @@ function Sidebar() {
   };
   // AI provider and Telegram are permanent nav items below; only the essentials show as "still to do".
   const pendingTracks = tracksReady ? TRACKS.filter((t) => !t.optional && !trackDone[t.id]) : [];
+
+  if (loc.pathname.startsWith('/admin')) {
+    return (
+      <aside className="sidebar">
+        <nav aria-label="Admin">
+          <div className="nav-section" style={{ paddingTop: 12 }}>Admin</div>
+          <NavLink to="/admin" end className="nav-item" title="Feedback inbox">
+            <span className="nav-ico"><InboxIcon /></span>
+            <span className="nav-label">Feedback</span>
+          </NavLink>
+          <div className="nav-sep" role="separator" />
+          <NavLink to="/" end className="nav-item" title="Back to Urchin">
+            <span className="nav-ico"><BackIcon /></span>
+            <span className="nav-label">Back to Urchin</span>
+          </NavLink>
+        </nav>
+      </aside>
+    );
+  }
 
   return (
     <aside className="sidebar">
@@ -217,6 +255,24 @@ function Sidebar() {
           />
         ))}
 
+        {mainOrgId && (
+          <>
+            <div className="nav-section">Workspace</div>
+            <NavLink to={`/orgs/${mainOrgId}/ai`} end className="nav-item" title="AI provider">
+              <span className="nav-ico"><SparkIcon /></span>
+              <span className="nav-label">AI provider</span>
+            </NavLink>
+            <NavLink to={`/orgs/${mainOrgId}/integrations`} end className="nav-item" title="Integrations">
+              <span className="nav-ico"><PlugIcon /></span>
+              <span className="nav-label">Integrations</span>
+            </NavLink>
+            <NavLink to={`/orgs/${mainOrgId}/settings`} end className="nav-item" title="Organization settings">
+              <span className="nav-ico"><GearIcon /></span>
+              <span className="nav-label">Settings</span>
+            </NavLink>
+          </>
+        )}
+
         {activeOrgId && pendingTracks.length > 0 && (
           <>
             <div className="nav-section">Finish setting up</div>
@@ -232,6 +288,14 @@ function Sidebar() {
           </>
         )}
       </nav>
+      {me.data?.is_admin && (
+        <div className="sidebar-foot">
+          <NavLink to="/admin" className="nav-item" title="Admin">
+            <span className="nav-ico"><ShieldIcon /></span>
+            <span className="nav-label">Admin</span>
+          </NavLink>
+        </div>
+      )}
     </aside>
   );
 }
@@ -271,8 +335,10 @@ function OrgNode({ org, open, onToggle, activeProjectId, isProjectOpen, togglePr
   const loc = useLocation();
   // Services are only fetched while the organization is open, and refreshed as you move around.
   const services = useLoad(
-    async () => (open ? api<{ projects: Project[] }>(`/orgs/${org.id}/projects`) : null),
+    async () => (open ? api<{ projects: Project[] }>(`/orgs/${org.id}/projects`) : undefined),
     [org.id, open, loc.pathname],
+    undefined,
+    `services:${org.id}`,
   );
   const list = services.data?.projects ?? [];
 
@@ -294,10 +360,6 @@ function OrgNode({ org, open, onToggle, activeProjectId, isProjectOpen, togglePr
           {list.map((p) => (
             <ServiceNode key={p.id} project={p} open={isProjectOpen(p.id)} onToggle={() => toggleProject(p.id)} current={p.id === activeProjectId} />
           ))}
-          <div className="nav-sep" role="separator" />
-          <NavLink to={`/orgs/${org.id}/ai`} end className="nav-item sub" title="AI provider"><span className="nav-label">AI provider</span></NavLink>
-          <NavLink to={`/orgs/${org.id}/integrations`} end className="nav-item sub" title="Integrations"><span className="nav-label">Integrations</span></NavLink>
-          <NavLink to={`/orgs/${org.id}/settings`} end className="nav-item sub" title="Organization settings"><span className="nav-label">Settings</span></NavLink>
         </div>
       )}
     </div>
@@ -309,9 +371,10 @@ function ServiceNode({ project: p, open, onToggle, current }: { project: Project
   return (
     <div>
       <div className="nav-row">
-        <NavLink to={`/projects/${p.id}`} end className="nav-item sub" title={p.name}>
+        {/* The name is not a link: it only opens and closes the service's pages. */}
+        <button type="button" className="nav-item sub" title={p.name} onClick={onToggle} aria-expanded={open}>
           <span className="nav-label">{p.name}</span>
-        </NavLink>
+        </button>
         <button className="nav-chev" onClick={onToggle} aria-expanded={open} aria-label={`${open ? 'Hide' : 'Show'} pages for ${p.name}`}>
           <Chevron open={open} />
         </button>

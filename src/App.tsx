@@ -14,6 +14,7 @@ import { PageSkeleton } from './components/Skeleton';
 const AutomationEditor = lazy(() => import('./pages/AutomationEditor'));
 import { AiProviderPage, IntegrationsPage } from './pages/Integrations';
 import OrgSettingsPage from './pages/OrgSettings';
+import AdminPage from './pages/Admin';
 import { FEATURES, ORG_KEY, RETURN_KEY } from './constants';
 
 /** Old bookmarks to the Telegram page land on Integrations. */
@@ -56,6 +57,7 @@ export default function App() {
         {/* Guided setup lives inside the dashboard; ?track=<id> focuses a single question. */}
         <Route path="/orgs/:orgId/setup" element={<Onboarding />} />
         <Route path="/orgs/:orgId/ai" element={<AiProviderPage />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="/orgs/:orgId/settings" element={<OrgSettingsPage />} />
         <Route path="/orgs/:orgId/integrations" element={<IntegrationsPage />} />
         <Route path="/orgs/:orgId/telegram" element={<ToIntegrations />} />

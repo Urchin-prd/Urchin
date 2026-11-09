@@ -157,6 +157,7 @@ code { padding: 1px 6px; } pre { padding: 12px; overflow: auto; margin: 6px 0 0;
 .sidebar {
   position: sticky; top: var(--header-h); height: calc(100vh - var(--header-h)); overflow: hidden auto;
   padding: 12px 8px; border-right: 1px solid var(--border); background: var(--bg);
+  display: flex; flex-direction: column;
 }
 .nav-section { padding: 18px 10px 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .nav-item {
@@ -716,3 +717,21 @@ pre { max-width: 100%; overflow-x: auto; white-space: pre-wrap; }
 
 /* Organization children: a thin divider before the agent pages */
 .nav-sep { height: 1px; margin: 6px 8px; background: var(--border); }
+
+/* A sidebar row that is a button (opens and closes) rather than a link */
+button.nav-item { background: none; border: 0; font: inherit; text-align: left; cursor: pointer; }
+
+/* Feedback box */
+.header-right { display: flex; align-items: center; gap: 10px; }
+.feedback-btn { display: inline-flex; align-items: center; gap: 6px; }
+.feedback-text { width: 100%; min-height: 110px; resize: vertical; padding: 10px; line-height: 1.5; height: auto; }
+@media (max-width: 560px) { .feedback-label { display: none; } .feedback-btn { padding: 6px 8px; } }
+
+/* Admin feedback inbox */
+.fb-item { display: grid; gap: 10px; }
+.fb-meta { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.fb-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; }
+
+/* Pinned to the bottom of the sidebar */
+.sidebar > nav { flex: 1 0 auto; }
+.sidebar-foot { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--border); position: sticky; bottom: 0; background: var(--bg); }
